@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Gastos Diarios</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; }
+        h1 { text-align: center; color: #ffffff; }
+        .container { max-width: 900px; margin: auto; background: rgb(85, 85, 85); padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        form { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; color: #ffffff; }
+        input, select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #ff0000; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #b30000; }
+        button.delete { background: #666; padding: 5px 10px; font-size: 12px; }
+        button.delete:hover { background: #444; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background: #ff0000; color: white; }
+        tr:nth-child(even) { background: #ffffff; }
+        tr:nth-child(odd) { background: #f5f5f5; }
+        .status { text-align: center; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Gastos Diarios</h1>
+        
+        <div id="status" class="status" style="display:none;"></div>
+
+        <!-- Formulario -->
+        <form id="formGasto">
+            <label>Descripción:</label>
+            <input type="text" id="descripcion" required>
+
+            <label>Tipo de Gasto:</label>
+            <select id="tipoGasto" required>
+                <option value="">Seleccione...</option>
+                <option value="Artículos de oficina">Artículos de oficina</option>
+                <option value="Comida">Comida</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Entretenimiento">Entretenimiento</option>
+                <option value="Otros">Otros</option>
+            </select>
+
+            <label>Monto (Q):</label>
+            <input type="number" step="0.01" id="monto" required>
+
+            <label>Fecha:</label>
+            <input type="date" id="fecha" required>
+
+            <button type="submit">Agregar Gasto</button>
+        </form>
+
+        <!-- Tabla de gastos -->
+        <table id="tablaGastos">
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>DESCRIPCIÓN</th>
+                    <th>TIPO DE GASTO</th>
+                    <th>MONTO</th>
+                    <th>FECHA</th>
+                    <th>ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los datos se cargan desde la API -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // URL de la API (cambia el puerto si es diferente)
+        const API_URL = 'http://localhost:5013/api/gastos';
+
+        // Cargar gastos al iniciar la página
+        window.onload = function() {
+            cargarGastos();
+            // Establecer fecha actual por defecto
+            document.getElementById('fecha').valueAsDate = new Date();
+        };
+
+        // Función para mostrar mensajes de estado
+        function mostrarMensaje(mensaje, tipo) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = mensaje;
+            statusDiv.className = `status ${tipo}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Cargar todos los gastos desde la API
+        async function cargarGastos() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('Error al cargar gastos');
+                
+                const gastos = await response.json();
+                const tbody = document.getElementById('tablaGastos').getElementsByTagName('tbody')[0];
+                tbody.innerHTML = '';
+
+                gastos.forEach((gasto, index) => {
+                    const fecha = new Date(gasto.fecha);
+                    const fechaFormateada = fecha.toLocaleDateString('es-GT');
+                    
+                    const fila = tbody.insertRow();
+                    fila.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${gasto.descripcion}</td>
+                        <td>${gasto.tipoGasto}</td>
+                        <td>Q${gasto.monto.toFixed(2)}</td>
+                        <td>${fechaFormateada}</td>
+                        <td>
+                            <button class="delete" onclick="eliminarGasto(${gasto.id})">Eliminar</button>
+                        </td>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje('Error al cargar los gastos. Asegúrate de que la API esté corriendo.', 'error');
+            }
+        }
+
+        // Agregar nuevo gasto
+        document.getElementById('formGasto').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const gasto = {
+                descripcion: document.getElementById('descripcion').value,
+                tipoGasto: document.getElementById('tipoGasto').value,
+                monto: parseFloat(document.getElementById('monto').value),
+                fecha: document.getElementById('fecha').value
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(gasto)
+                });
+
+                if (!response.ok) throw new Error('Error al agregar gasto');
+
+                mostrarMensaje('Gasto agregado exitosamente', 'success');
+                document.getElementById('formGasto').reset();
+                document.getElementById('fecha').valueAsDate = new Date();
+                cargarGastos();
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje('Error al agregar el gasto', 'error');
+            }
+        });
+
+        // Eliminar gasto
+        async function eliminarGasto(id) {
+            if (!confirm('¿Estás seguro de eliminar este gasto?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Error al eliminar gasto');
+
+                mostrarMensaje('Gasto eliminado exitosamente', 'success');
+                cargarGastos();
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarMensaje('Error al eliminar el gasto', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
