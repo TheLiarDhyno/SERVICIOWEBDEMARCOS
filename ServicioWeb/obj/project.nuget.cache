@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Qcf3MGuCxuc=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\FroAn\\OneDrive\\Documentos\\Nueva_carpeta\\Docs\\Universidad\\Paginas\\ServicioWeb_Visual_Studio\\ServicioWeb\\ServicioWeb.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\FroAn\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.10\\microsoft.aspnetcore.openapi.9.0.10.nupkg.sha512",
+    "C:\\Users\\FroAn\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
